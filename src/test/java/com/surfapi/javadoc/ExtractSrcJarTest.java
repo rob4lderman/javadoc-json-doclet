@@ -42,7 +42,7 @@ public class ExtractSrcJarTest {
         // Run javadoc against the extracted src
         Pair<List<String>,List<String>> out = new JavadocProcessForTesting( extractDir ).run();
         
-        JSONArray doc = (JSONArray) new JSONParser().parse( StringUtils.join( out.getLeft(), "" ) );
+        JSONArray doc = (JSONArray) new JSONParser().parse( "[" + StringUtils.join( out.getLeft(), "" ) + "]" );
         
         // The package is added last.
         assertFalse( doc.isEmpty() );
@@ -75,7 +75,7 @@ public class ExtractSrcJarTest {
         // Run javadoc against the 
         Pair<List<String>,List<String>> out = new JavadocProcessForTesting( extractDir ).run();
         
-        JSONArray doc = (JSONArray) new JSONParser().parse( StringUtils.join( out.getLeft(), "" ) );
+        JSONArray doc = (JSONArray) new JSONParser().parse( "[" + StringUtils.join( out.getLeft(), "" ) + "]" );
         
         // The package is added last.
         assertFalse( doc.isEmpty() );

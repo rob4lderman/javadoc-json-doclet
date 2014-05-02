@@ -40,11 +40,11 @@ import java.util.concurrent.Callable;
 * @version 1.0
 *
 * @see <a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#link">Javadoc Reference Guide</a>
-* @see com.surfapi.javadoc.MyDoclet
+* @see com.surfapi.javadoc.JsonDoclet
 * @see java.net.URL#equals The URL.equals method
 *
 */
-@DemoAnnotation
+@DemoAnnotation( author = "Rob Alderman" )
 public abstract class DemoJavadoc<T extends List> implements Callable<String> {
 
     /**
@@ -61,6 +61,11 @@ public abstract class DemoJavadoc<T extends List> implements Callable<String> {
      * A static final member named z.
      */
     public static final String z = "ZZZ";
+    
+    /**
+     * CTOR. default.
+     */
+    public DemoJavadoc() {}
 
     /**
      * CTOR.
@@ -69,6 +74,18 @@ public abstract class DemoJavadoc<T extends List> implements Callable<String> {
      */
     public DemoJavadoc(String b) {
         this.x = b;
+    }
+    
+    /**
+     * 
+     * @param nope this parm doesn't exist!
+     * @param demoJavdoc oh man! i misspelled demoJavadoc!
+     * 
+     * @throws DemoJavadocException for whatever reason
+     * @throws NullPointerException if you gimme a null
+     */
+    public DemoAnnotation getAnnotation(DemoJavadoc demoJavadoc) throws DemoJavadocException {
+        return null;
     }
     
     /**

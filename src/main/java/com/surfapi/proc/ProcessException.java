@@ -14,14 +14,15 @@ public class ProcessException extends IOException {
      * CTOR.
      */
     public ProcessException(ProcessHelper processHelper) {
-        this( processHelper.getProcess(), processHelper.getStdoutNow(), processHelper.getStderrNow() );
+        this( processHelper.getProcess(), processHelper.getDescription(), processHelper.getStdoutNow(), processHelper.getStderrNow() );
     }
     
     /**
      * CTOR.
      */
-    public ProcessException( Process p, List<String> stdout, List<String> stderr) {
+    public ProcessException( Process p, String description, List<String> stdout, List<String> stderr) {
         super( "Process failed with exitValue " + p.exitValue()
+               + "; Description: " + description
                + "; =====stdout================================================\n" 
                + StringUtils.join( stdout, "\n" )
                + "; =====stderr================================================\n" 

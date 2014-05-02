@@ -18,7 +18,7 @@ import org.junit.Test;
 /**
  *
  */
-public class MyDocletTest {
+public class JsonDocletTest {
 
  
     /**
@@ -34,11 +34,11 @@ public class MyDocletTest {
         // For manual verification...
         // FileUtils.write( new File("test.out"), StringUtils.join( out.getLeft(), "\n") );
         
-        JSONArray doc = (JSONArray) new JSONParser().parse( StringUtils.join( out.getLeft(), "" ) );
+        JSONArray doc = (JSONArray) new JSONParser().parse( "[" + StringUtils.join( out.getLeft(), "" ) + "]" );
         
         // The package is added last.
         assertFalse( doc.isEmpty() );
-        assertEquals( 16, doc.size() );
+        assertEquals( 27, doc.size() );
         assertEquals( "package", ((JSONObject)doc.get(doc.size()-1)).get("metaType"));
         assertEquals( "com.surfapi.test", ((JSONObject)doc.get(doc.size()-1)).get("name"));
     }

@@ -4,16 +4,18 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Observer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import org.apache.commons.io.IOUtils;
 
 /**
  * A little wrapper around a forked Process.  It sets up separate threads
@@ -30,9 +32,29 @@ import org.apache.commons.io.IOUtils;
 public class ProcessHelper<T extends ProcessHelper> {
     
     /**
+     * Output stream identifier
+     */
+    public enum Stream {
+        STDOUT,
+        STDERR;
+    }
+    
+    /**
      * The process.
      */
     private Process process;
+
+    /**
+     * Output observers are registered with the ProcessHelper and are notified
+     * whenever the process writes output to stdout/stderr.
+     */
+    private Collection<Observer> stdoutObservers = new ArrayList<Observer>();
+    
+    /**
+     * Output observers are registered with the ProcessHelper and are notified
+     * whenever the process writes output to stdout/stderr.
+     */
+    private Collection<Observer> stderrObservers = new ArrayList<Observer>();
     
     /**
      * ExecutorService for creating separate threads to read the process's stdout/stderr streams.
@@ -57,12 +79,55 @@ public class ProcessHelper<T extends ProcessHelper> {
     private Future<List<String>> stderr;
     
     /**
+     * A short description of the process, mainly for debugging purposes.
+     */
+    private String description;
+    
+    /**
      * CTOR.  
      * 
      * @param process - the already-started process.
      */
     public ProcessHelper(Process process) {
         this.process = process;
+    }
+    
+    /**
+     * Add an output observer.
+     * 
+     * Note: observers should be added *BEFORE* calling spawnStreamReaders.
+     */
+    public T addObserver(Stream stream, Observer observer) {
+        if (stream == Stream.STDOUT) {
+            stdoutObservers.add(observer);
+        } else {
+            stderrObservers.add(observer);
+        }
+        return (T) this;
+    }
+    
+    /**
+     * Set the description
+     * 
+     * @return this
+     */
+    public T setDescription(String description) {
+        this.description = description;
+        return (T) this;
+    }
+    
+    /**
+     * @return process description
+     */
+    public String getDescription() {
+        return description;
+    }
+    
+    /**
+     * Redirect to the given output stream
+     */
+    public T pipeTo(Stream stream, OutputStream outputStream) {
+        return addObserver( stream, new StreamPiper(outputStream) );
     }
     
     /**
@@ -104,13 +169,13 @@ public class ProcessHelper<T extends ProcessHelper> {
         // waiting for this guy to read some output.
         stdout = getExecutorService().submit( new Callable<List<String>>() {
             public List<String> call() {
-                return loadStreamUnchecked(process.getInputStream());
+                return loadStreamUnchecked(Stream.STDOUT, process.getInputStream());
             }
         });
 
         stderr = getExecutorService().submit( new Callable<List<String>>() {
             public List<String> call() {
-                return loadStreamUnchecked(process.getErrorStream());
+                return loadStreamUnchecked(Stream.STDERR, process.getErrorStream());
             }
         });
         
@@ -222,29 +287,69 @@ public class ProcessHelper<T extends ProcessHelper> {
      *
      * @throws RuntimeException if an IOException occurs.
      */
-    protected List<String> loadStreamUnchecked(InputStream is) {
+    protected List<String> loadStreamUnchecked(Stream stream, InputStream is) {
         try {
-            return IOUtils.readLines(is, "ISO-8859-1");
-            // return loadStream(is);
+            // return IOUtils.readLines(is, "ISO-8859-1");
+            return loadStream(stream, is);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
     }
 
     /**
-     * Read the entire contents of the given inputstream and return as a String.
+     * Read the contents of the given inputstream.
+     * 
+     * Each line is passed to the output observers.
+     * 
+     * The last 1000 lines are saved in a list and returned.
      *
-     * @return The contents of the InputStream.
+     * @return The last 1000 lines of the InputStream.
      */
-    protected List<String> loadStream(InputStream is) throws IOException {
-        List<String> retMe = new ArrayList<String>();
+    protected List<String> loadStream(Stream stream, InputStream is) throws IOException {
+        List<String> retMe = new LimitedQueue<String>(1000);
         BufferedReader br = new BufferedReader(new InputStreamReader( is ) );     // stdout
         String line;
         while ((line = br.readLine()) != null) {
             retMe.add(line);
+            notifyObservers(stream, line);
         } 
         return retMe;
     }
+    
+    /**
+     * Notify output observers when a new line of output is read from the process's
+     * stdout or stderr streams.
+     */
+    protected void notifyObservers(Stream stream, String line) {
+        Collection<Observer> observers = (stream == Stream.STDOUT) ? stdoutObservers : stderrObservers;
+        for (Observer observer : observers) {
+            observer.update(null, line);
+        }
+    }
 
 
+}
+
+/**
+ * Fixed-size circular FIFO queue.
+ * 
+ */
+class LimitedQueue<E> extends LinkedList<E> {
+
+    private final int limit;
+
+    public LimitedQueue(int limit) {
+        this.limit = limit;
+    }
+
+    @Override
+    public boolean add(E o) {
+        super.add(o);    // added to tail.
+        
+        while (size() > limit) { 
+            remove(); // removed from head
+        } 
+
+        return true;
+    }
 }

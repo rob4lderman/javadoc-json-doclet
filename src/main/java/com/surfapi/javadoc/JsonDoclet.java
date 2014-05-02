@@ -10,6 +10,8 @@ import org.json.simple.JSONObject;
 
 import com.sun.javadoc.AnnotationDesc;
 import com.sun.javadoc.AnnotationTypeDoc;
+import com.sun.javadoc.AnnotationTypeElementDoc;
+import com.sun.javadoc.AnnotationValue;
 import com.sun.javadoc.ClassDoc;
 import com.sun.javadoc.ConstructorDoc;
 import com.sun.javadoc.Doc;
@@ -24,6 +26,7 @@ import com.sun.javadoc.Parameter;
 import com.sun.javadoc.ProgramElementDoc;
 import com.sun.javadoc.RootDoc;
 import com.sun.javadoc.Tag;
+import com.sun.javadoc.ThrowsTag;
 import com.sun.javadoc.Type;
 import com.sun.javadoc.TypeVariable;
 import com.surfapi.json.JSONTrace;
@@ -35,7 +38,7 @@ import com.surfapi.json.JSONTrace;
  * PackageDoc, ClassDoc, MethodDoc, etc. APIs in the com.sun.javadoc library.
  * 
  */
-public class MyDoclet {
+public class JsonDoclet {
 
     /**
      * Doclet entry point. Javadoc calls this method, passing in the
@@ -45,7 +48,7 @@ public class MyDoclet {
 
         // System.out.println( JSONTrace.prettyPrint( new MyDoclet(root).collect() ) );
         
-        for ( Object obj :  new MyDoclet(root).collect() ) {
+        for ( Object obj :  new JsonDoclet(root).collect() ) {
             System.out.println( JSONTrace.prettyPrint( (Map) obj ) );
         }
 
@@ -75,7 +78,7 @@ public class MyDoclet {
     /**
      * CTOR.
      */
-    public MyDoclet(RootDoc rootDoc) {
+    public JsonDoclet(RootDoc rootDoc) {
         this.rootDoc = rootDoc;
     }
     
@@ -87,7 +90,7 @@ public class MyDoclet {
         JSONArray retMe = new JSONArray();
 
         for (ClassDoc classDoc : rootDoc.classes()) {
-            retMe.add( processClassDoc(classDoc) );
+            retMe.add( classDoc.isAnnotationType() ? processAnnotationTypeDoc( (AnnotationTypeDoc) classDoc ) : processClassDoc(classDoc) );
             
             retMe.addAll( processMethodDocs( classDoc.methods() ) );
             
@@ -138,7 +141,7 @@ public class MyDoclet {
         classJson.put("methods", processMethodDocStubs(classDoc.methods()));
         classJson.put("constructors", processConstructorDocStubs( classDoc.constructors() ));
         classJson.put("fields", processFieldDocStubs(classDoc.fields()));
-        classJson.put("enumConstants", processFieldDocStubs(classDoc.enumConstants()));    // TODO: only enums.
+        classJson.put("enumConstants", processFieldDocs(classDoc.enumConstants()));    // TODO: only enums.
         classJson.put("innerClasses", processClassDocStubs(classDoc.innerClasses()));
 
         return classJson;
@@ -380,6 +383,7 @@ public class MyDoclet {
         retMe.put("thrownExceptionTypes", processTypes(emDoc.thrownExceptionTypes()));
         retMe.put("typeParameters", processTypeVariables(emDoc.typeParameters()));
         retMe.put("typeParamTags", processParamTags(emDoc.typeParamTags()));
+        retMe.put("throwsTags", processThrowsTags(emDoc.throwsTags()));
         
         return retMe;
     }
@@ -392,6 +396,8 @@ public class MyDoclet {
         JSONObject retMe = processMemberDocStub(emDoc);
         
         retMe.put("parameters", processParameterStubs(emDoc.parameters()));
+        retMe.put("flatSignature", emDoc.flatSignature());
+        retMe.put("thrownExceptionTypes", processTypes(emDoc.thrownExceptionTypes()));
         
         return retMe;
     }
@@ -446,7 +452,8 @@ public class MyDoclet {
         
         JSONObject retMe = new JSONObject();
 
-        retMe.put("toString", parameter.toString());
+        retMe.put("type", processTypeStub(parameter.type()));
+        retMe.put("name", parameter.name());
 
         return retMe;
     }
@@ -537,6 +544,18 @@ public class MyDoclet {
         return retMe;
     }
     
+    
+    /**
+     * @return the full JSON for the given annotation type
+     */
+    protected JSONObject processAnnotationTypeDoc(AnnotationTypeDoc annoTypeDoc) {
+        JSONObject retMe = processClassDoc(annoTypeDoc);
+        
+        retMe.put( "elements", processAnnotationTypeElementDocs( annoTypeDoc.elements() ) );
+        
+        return retMe;
+    }
+    
     /**
      * @return JSON stubs for the given AnnotationTypeDoc[].
      *
@@ -555,6 +574,70 @@ public class MyDoclet {
      */
     protected JSONObject processAnnotationTypeDocStub(AnnotationTypeDoc annotationTypeDoc) {
         return processClassDocStub(annotationTypeDoc);
+    }
+    
+    /**
+     * @return the full JSON for the given annotation type
+     */
+    protected JSONArray processAnnotationTypeElementDocs(AnnotationTypeElementDoc[] annoTypeElementDocs) {
+        
+        JSONArray retMe = new JSONArray();
+        
+        for (AnnotationTypeElementDoc annoTypeElementDoc : annoTypeElementDocs) {
+            retMe.add( processAnnotationTypeElementDoc( annoTypeElementDoc ) );
+        }
+        
+        return retMe;
+    }
+    
+    /**
+     * @return the full JSON for the given annotation type
+     */
+    protected JSONObject processAnnotationTypeElementDoc(AnnotationTypeElementDoc annoTypeElementDoc) {
+        if (annoTypeElementDoc == null) {
+            return null;
+        }
+        
+        JSONObject retMe = processMethodDoc( annoTypeElementDoc );
+        
+        // retMe.put("name", annoTypeElementDoc.name());
+        // retMe.put("qualifiedName", annoTypeElementDoc.qualifiedName());
+        // retMe.put("returnType", processTypeStub(annoTypeElementDoc.returnType()));
+        retMe.put("defaultValue", processAnnotationValue( annoTypeElementDoc.defaultValue() ) );
+        
+        return retMe;
+    }
+    
+    /**
+     * @return the full JSON for the given annotation type
+     */
+    protected JSONObject processAnnotationTypeElementDocStub(AnnotationTypeElementDoc annoTypeElementDoc) {
+        if (annoTypeElementDoc == null) {
+            return null;
+        }
+        
+        JSONObject retMe = processMemberDocStub( annoTypeElementDoc );
+        
+        retMe.put("returnType", processTypeStub(annoTypeElementDoc.returnType()));
+        
+        // JSONObject retMe = new JSONObject();
+        // retMe.put("name", annoTypeElementDoc.name())
+        return retMe;
+    }
+    
+    /**
+     * @return the full JSON for the given annotation type
+     */
+    protected JSONObject processAnnotationValue(AnnotationValue annoValue) {
+        
+        if (annoValue == null) {
+            return null;
+        }
+        
+        JSONObject retMe = new JSONObject();
+        retMe.put( "toString", annoValue.toString() );
+        
+        return retMe;
     }
     
     /**
@@ -581,8 +664,8 @@ public class MyDoclet {
         
         JSONObject retMe = new JSONObject();
         
-        retMe.put( "element", elementValue.element().name());
-        retMe.put("value", elementValue.value().toString());
+        retMe.put( "element", processAnnotationTypeElementDocStub( elementValue.element() )); 
+        retMe.put("value", processAnnotationValue( elementValue.value() ) );
         
         return retMe;
     }
@@ -663,7 +746,9 @@ public class MyDoclet {
         
         JSONObject retMe = new JSONObject();
         
-        retMe.put("typeNameAndDimension", type.typeName() + type.dimension());
+        retMe.put("qualifiedTypeName", type.qualifiedTypeName());
+        retMe.put("typeName", type.typeName());
+        retMe.put("dimension", type.dimension());
         retMe.put("toString", type.toString());
         
         return retMe;
@@ -698,7 +783,6 @@ public class MyDoclet {
         
         docJson.put("seeTags", processTags( doc.seeTags() ) );
         
-        // TODO: should i add this to the stub?
         docJson.put("firstSentenceTags", processTags( doc.firstSentenceTags() ));
         
         docJson.put("metaType", determineMetaType(doc));
@@ -719,6 +803,7 @@ public class MyDoclet {
         
         retMe.put("name", doc.name());
         retMe.put("metaType", determineMetaType(doc));
+        // retMe.put("firstSentenceTags", processTags( doc.firstSentenceTags() ));
         
         return retMe;
     }
@@ -784,8 +869,6 @@ public class MyDoclet {
     }
     
     /**
-     * TODO: what is a paramTag.  What are the different types of tags?
-     *
      * @return full JSON objects for the given ParamTag[]
      */
     protected JSONArray processParamTags(ParamTag[] paramTags) {
@@ -812,25 +895,36 @@ public class MyDoclet {
         
         return paramJson;
     }
-
+    
     /**
-     * TODO: this is unused. A valiant attempt at using FP ... but alas, java is just too clunky en ce moment.
+     * @return full JSON objects for the given ThrowsTag[]
      */
-    protected <T> JSONArray processArray(T[] arr, MapFunction<T, JSONObject> mapFunction) {
+    protected JSONArray processThrowsTags(ThrowsTag[] throwsTags) {
         JSONArray retMe = new JSONArray();
-        for (T o : arr) {
-            retMe.add( mapFunction.call(o) );
+        
+        for (ThrowsTag throwsTag : throwsTags) {
+            retMe.add(processThrowsTag(throwsTag));
         }
+        
+        return retMe;
+    }
+    
+    /**
+     * @return the full JSON for the given ThrowsTag
+     */
+    protected JSONObject processThrowsTag(ThrowsTag throwsTag) {
+        if (throwsTag == null) {
+            return null;
+        }
+        
+        JSONObject retMe = processTag(throwsTag);
+        retMe.put("exceptionComment", throwsTag.exceptionComment());
+        retMe.put("exceptionName", throwsTag.exceptionName());
+        retMe.put("exceptionType", processTypeStub(throwsTag.exceptionType()));
+        
         return retMe;
     }
 
 }
 
-/**
- * TODO: this is unused. A valiant attempt at using FP ... but alas, java is just too clunky en ce moment.
- * I: input type
- * O: output type
- */
-interface MapFunction<I,O> {
-    O call(I input);
-}
+

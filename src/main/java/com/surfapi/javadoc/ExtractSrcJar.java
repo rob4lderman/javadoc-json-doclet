@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import com.surfapi.log.Log;
 import com.surfapi.proc.ProcessException;
 import com.surfapi.proc.ProcessHelper;
 
@@ -38,8 +39,10 @@ public class ExtractSrcJar {
      * @return the extraction directory.
      */
     public File extract() throws IOException, InterruptedException {
-        
+
         File extractDir = makeExtractDir();
+        
+        Log.log(this, "extract: extracting jar " + jarFile.getName() + " to directory: " + extractDir.getCanonicalPath());
 
         ProcessHelper process = new ProcessHelper( buildJarProcess( extractDir ) ).waitFor();
         

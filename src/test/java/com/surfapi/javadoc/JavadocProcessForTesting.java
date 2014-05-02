@@ -2,6 +2,8 @@ package com.surfapi.javadoc;
 
 import java.io.File;
 
+import org.apache.commons.io.filefilter.TrueFileFilter;
+
 public class JavadocProcessForTesting extends JavadocProcess {
 
     /**
@@ -12,6 +14,7 @@ public class JavadocProcessForTesting extends JavadocProcess {
     public JavadocProcessForTesting(File baseDir) {
         super(baseDir);
         setDocletPath( buildTestDocletPath() );
+        setDirFilter( TrueFileFilter.INSTANCE );
     }
     
     
@@ -20,10 +23,11 @@ public class JavadocProcessForTesting extends JavadocProcess {
      * 
      * @return the classpath (-docletpath) for the custom doclet.
      */
-    protected String buildTestDocletPath() {
+    protected static String buildTestDocletPath() {
         String mavenProjectDir = System.getProperty("user.dir");
         return mavenProjectDir + "/target/classes"
                 + File.pathSeparator
                 + mavenProjectDir + "/docletpath/json-simple-1.1.1.jar";
     }
+    
 }
