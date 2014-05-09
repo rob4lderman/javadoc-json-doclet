@@ -23,12 +23,14 @@ import com.sun.javadoc.MethodDoc;
 import com.sun.javadoc.PackageDoc;
 import com.sun.javadoc.ParamTag;
 import com.sun.javadoc.Parameter;
+import com.sun.javadoc.ParameterizedType;
 import com.sun.javadoc.ProgramElementDoc;
 import com.sun.javadoc.RootDoc;
 import com.sun.javadoc.Tag;
 import com.sun.javadoc.ThrowsTag;
 import com.sun.javadoc.Type;
 import com.sun.javadoc.TypeVariable;
+import com.sun.javadoc.WildcardType;
 import com.surfapi.json.JSONTrace;
 
 /**
@@ -37,6 +39,36 @@ import com.surfapi.json.JSONTrace;
  * The structure of the JSON objects closely matches that of the
  * PackageDoc, ClassDoc, MethodDoc, etc. APIs in the com.sun.javadoc library.
  * 
+ *
+ * Explanation of types:
+ *
+ * An AnnotationDesc represents an annotation applied to a class/method/parm/whatever.
+ * It contains an AnnotationType and a list of ElementValuePairs.
+ * 
+ * An AnnotationType represents an annotation class (type). It inherits from ClassDoc.
+ * It contains a list of AnnotationTypeElementDocs.
+ * 
+ * An AnnotationTypeElementDoc represents a single element/field within an annotation.
+ * It inherits from MethodDoc. It contains an AnnotationValue defaultValue.
+ * 
+ * An AnnotationValue is just a wrapper around an Object value (usually a String, could be an Object).
+ * 
+ * An AnnotationDesc.ElementValuePair is a pairing of AnnotationTypeElementDoc and AnnotationValue.
+ * It describes an applied annotation element value.
+ * 
+ * TypeVariable is a template type variable name, e.g. for java.util.List<E>, the TypeVariable is "E".
+ * A TypeVariable has "bounds", which is its "extends" clause.
+ *
+ * TypeArgument is a value for a TypeVariable. E.g, for java.util.List<String>, the TypeArgument is "String".
+ * TypeArguments are contained in ParameterizedTypes.
+ *
+ * A ParameterizedType is a type that contains a TypeArgument. E.g java.util.List<String> is a ParameterizedType.
+ * The Type is "java.util.List", the TypeArgument is "String".
+ *
+ * A WildcardType is a TypeArgument that contains the wildcard '?'.  Often it's accompanied with an 'extends' or
+ * 'super' clause.
+ *
+ *
  */
 public class JsonDoclet {
 
@@ -107,6 +139,9 @@ public class JsonDoclet {
         for (PackageDoc packageDoc : packageDocs) {
             retMe.add( processPackageDoc(packageDoc) );
         }
+
+        // TODO: OPTIMIZATION: remove all null/empty entries from the map, to minimize storage use.
+        //       process Maps and Lists recursively.
         
         return retMe;
     }
@@ -280,7 +315,6 @@ public class JsonDoclet {
         
         JSONObject retMe = processExecutableMemberDoc(methodDoc);
 
-        // TODO: add override info? 
         retMe.put("returnType", processType(methodDoc.returnType()));
         
         return retMe;
@@ -398,6 +432,7 @@ public class JsonDoclet {
         retMe.put("parameters", processParameterStubs(emDoc.parameters()));
         retMe.put("flatSignature", emDoc.flatSignature());
         retMe.put("thrownExceptionTypes", processTypes(emDoc.thrownExceptionTypes()));
+        retMe.put("typeParameters", processTypeVariables(emDoc.typeParameters()));
         
         return retMe;
     }
@@ -514,20 +549,6 @@ public class JsonDoclet {
     
     /**
      *  
-     * An AnnotationDesc represents an annotation applied to a class/method/parm/whatever.
-     * It contains an AnnotationType and a list of ElementValuePairs.
-     * 
-     * An AnnotationType represents an annotation class (type). It inherits from ClassDoc.
-     * It contains a list of AnnotationTypeElementDocs.
-     * 
-     * An AnnotationTypeElementDoc represents a single element/field within an annotation.
-     * It inherits from MethodDoc. It contains an AnnotationValue defaultValue.
-     * 
-     * An AnnotationValue is just a wrapper around an Object value (usually a String, could be an Object).
-     * 
-     * An AnnotationDesc.ElementValuePair is a pairing of AnnotationTypeElementDoc and AnnotationValue.
-     * It describes an applied annotation element value.
-     * 
      * 
      * @return the full JSON for the given AnnotationDesc
      */
@@ -686,6 +707,7 @@ public class JsonDoclet {
     }
     
     /**
+     * 
      * @return the full JSON for the given TypeVariable
      */
     protected JSONObject processTypeVariable(TypeVariable typeVariable) {
@@ -731,6 +753,11 @@ public class JsonDoclet {
         retMe.put("typeName", type.typeName());
         retMe.put("toString", type.toString());
         retMe.put("dimension", type.dimension());
+
+        retMe.put("parameterizedType", processParameterizedType( type.asParameterizedType() ) );
+        retMe.put("wildcardType", processWildcardType( type.asWildcardType() ) );
+
+        // TODO: add metaType=type/parameterizedType/wildcardType
         
         return retMe;
     }
@@ -739,21 +766,56 @@ public class JsonDoclet {
      * @return a JSON stub for the given Type
      */
     protected JSONObject processTypeStub(Type type) {
+
+        return processType(type);
         
-        if (type == null) {
+        // -rx- if (type == null) {
+        // -rx-     return null;
+        // -rx- }
+        // -rx- 
+        // -rx- JSONObject retMe = new JSONObject();
+        // -rx- 
+        // -rx- retMe.put("qualifiedTypeName", type.qualifiedTypeName());
+        // -rx- retMe.put("typeName", type.typeName());
+        // -rx- retMe.put("dimension", type.dimension());
+        // -rx- retMe.put("toString", type.toString());
+        // -rx- 
+        // -rx- return retMe;
+    }
+    
+    /**
+     * @return the full JSON for the given Type
+     */
+    protected JSONObject processParameterizedType(ParameterizedType parameterizedType) {
+        
+        if (parameterizedType == null) {
             return null;
         }
         
         JSONObject retMe = new JSONObject();
         
-        retMe.put("qualifiedTypeName", type.qualifiedTypeName());
-        retMe.put("typeName", type.typeName());
-        retMe.put("dimension", type.dimension());
-        retMe.put("toString", type.toString());
-        
+        retMe.put("typeArguments", processTypes( parameterizedType.typeArguments() ) );
+
         return retMe;
     }
-    
+
+    /**
+     * @return the full JSON for the given Type
+     */
+    protected JSONObject processWildcardType(WildcardType wildcardType) {
+        
+        if (wildcardType == null) {
+            return null;
+        }
+        
+        JSONObject retMe = new JSONObject();
+        
+        retMe.put("extendsBounds", processTypes( wildcardType.extendsBounds() ) );
+        retMe.put("superBounds", processTypes( wildcardType.superBounds() ) );
+
+        return retMe;
+    }
+
     /**
      * The Doc element is a supertype to the others (ClassDoc, PackageDoc, etc).
      * 
@@ -803,7 +865,7 @@ public class JsonDoclet {
         
         retMe.put("name", doc.name());
         retMe.put("metaType", determineMetaType(doc));
-        // retMe.put("firstSentenceTags", processTags( doc.firstSentenceTags() ));
+        retMe.put("firstSentenceTags", processTags( doc.firstSentenceTags() ));
         
         return retMe;
     }

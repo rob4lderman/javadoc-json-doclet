@@ -32,6 +32,16 @@ import java.util.concurrent.Callable;
 * A test file used for parsing its javadoc comments.
 *
 * This file was copied from {@link it.sauronsoftware.feed4j.FeedParser FeedParser}.
+* This file links to {@link com.surfapi.test.DemoAnnotation}.
+* It also links in plaint text: {@linkplain com.surfapi.test.DemoJavadocException}
+*
+* And here is some {@literal literal text like <hello> surrounded by brackets}
+*
+* And here is some malicious scripting: <script>window.alert("hello from DemoJavadoc.commentText")</script>
+*
+* Here's some <code>code within a code tag </code>.
+*
+* Compared to the @{code at-code tag, with malicious script: <script>window.alert("hello from DemoJavadoc.commentText.@code")</script>}
 * 
 * @param <T> A generic type parm T, extends List
 * 
@@ -41,11 +51,12 @@ import java.util.concurrent.Callable;
 *
 * @see <a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#link">Javadoc Reference Guide</a>
 * @see com.surfapi.javadoc.JsonDoclet
+* @see com.surfapi.javadoc.JsonDoclet#processType
 * @see java.net.URL#equals The URL.equals method
 *
 */
 @DemoAnnotation( author = "Rob Alderman" )
-public abstract class DemoJavadoc<T extends List> implements Callable<String> {
+public abstract class DemoJavadoc<T extends List> implements Callable<String>, DemoInterface {
 
     /**
      * A private member.
@@ -103,20 +114,18 @@ public abstract class DemoJavadoc<T extends List> implements Callable<String> {
      * This is the second sentence of the javadoc. For more
      * info on URLs go {@link java.net.URL here}.  How about a 4th sentence? 
      * 
-     * @param url   The first parm is a feed URL.
+     * @param url   The first parm is a feed URL.<script>window.alert("hello from parse.url @param");</script>
      *              The description for the url parm has two lines.
      * @param y     An List param named y.
      *             
-     * @return An input stream for the feed.
+     * @return An input stream for the feed <script>window.alert("hello from parse.url @return ");</script>
      * 
      * @throws IOException
      *             I/O error during conetnts retrieving.
-     * @throws IllegalArgumentException
-     *             The document retrieved is not valid XML.
      *
      * @deprecated
      */
-    public InputStream parse(URL url, List<T> y) throws IOException, IllegalArgumentException {
+    public InputStream parse(URL url, @DemoAnnotation(author="Rob") List<T> y) throws IOException, IllegalArgumentException {
        
         if (x.equals("blah")) {
             throw new IOException("blah");
