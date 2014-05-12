@@ -38,7 +38,7 @@ public class JsonDocletTest {
         
         // The package is added last.
         assertFalse( doc.isEmpty() );
-        assertEquals( 30, doc.size() );
+        assertEquals( 33, doc.size() );
         assertEquals( "package", ((JSONObject)doc.get(doc.size()-1)).get("metaType"));
         assertEquals( "com.surfapi.test", ((JSONObject)doc.get(doc.size()-1)).get("name"));
     }
