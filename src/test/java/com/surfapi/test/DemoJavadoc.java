@@ -29,7 +29,7 @@ import java.util.concurrent.Callable;
 //@version
 
 /**
-* A test file used for parsing its javadoc comments.
+* A test file {@link DemoJavadoc} used for parsing its javadoc comments.
 *
 * This file was copied from {@link it.sauronsoftware.feed4j.FeedParser FeedParser}.
 * This file links to {@link com.surfapi.test.DemoAnnotation}.
@@ -50,8 +50,12 @@ import java.util.concurrent.Callable;
 * @version 1.0
 *
 * @see <a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#link">Javadoc Reference Guide</a>
-* @see com.surfapi.javadoc.JsonDoclet
-* @see com.surfapi.javadoc.JsonDoclet#processType
+* @see com.surfapi.test.DemoJavadocException
+* @see DemoAnnotation
+* @see DemoInterface#interfaceMethod
+* @see #parse
+* @see #parse(URL, List)
+* @see com.surfapi.javadoc.DemoJavadocSubClass#someAbstractMethod
 * @see java.net.URL#equals The URL.equals method
 *
 */
@@ -115,13 +119,14 @@ public abstract class DemoJavadoc<T extends List> implements Callable<String>, D
      * info on URLs go {@link java.net.URL here}.  How about a 4th sentence? 
      * 
      * @param url   The first parm is a feed URL.<script>window.alert("hello from parse.url @param");</script>
-     *              The description for the url parm has two lines.
+     *              The description for the url parm has a link {@link #someStaticMethod} and two lines.
      * @param y     An List param named y.
      *             
      * @return An input stream for the feed <script>window.alert("hello from parse.url @return ");</script>
      * 
      * @throws IOException
      *             I/O error during conetnts retrieving.
+     * @exception IllegalArgumentException This one uses the exception tag.
      *
      * @deprecated
      */
@@ -152,6 +157,13 @@ public abstract class DemoJavadoc<T extends List> implements Callable<String>, D
     public String call() throws Exception {
         // TODO Auto-generated method stub
         return null;
+    }
+    
+    /**
+     * Another call method with different args.
+     */
+    public String call(String blah) {
+        return "";
     }
     
     /**

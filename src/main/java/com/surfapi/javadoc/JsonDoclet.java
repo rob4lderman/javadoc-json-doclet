@@ -129,6 +129,8 @@ public class JsonDoclet {
             retMe.addAll( processConstructorDocs( classDoc.constructors() ) );
             
             retMe.addAll( processFieldDocs( classDoc.fields() ) );
+
+            retMe.addAll( processFieldDocs( classDoc.enumConstants() ) );
             
             // TODO: anything else?
         }
@@ -176,7 +178,7 @@ public class JsonDoclet {
         classJson.put("methods", processMethodDocStubs(classDoc.methods()));
         classJson.put("constructors", processConstructorDocStubs( classDoc.constructors() ));
         classJson.put("fields", processFieldDocStubs(classDoc.fields()));
-        classJson.put("enumConstants", processFieldDocs(classDoc.enumConstants()));    // TODO: only enums.
+        classJson.put("enumConstants", processFieldDocStubs(classDoc.enumConstants()));
         classJson.put("innerClasses", processClassDocStubs(classDoc.innerClasses()));
 
         return classJson;
