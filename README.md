@@ -63,10 +63,10 @@ E.g. here's a portion of the JSON javadoc for method _`java.lang.String.substrin
 The project also provides a convenience utility that, given a src jar file, extracts it
 and generates javadoc for all \*.java files.
 
-    $ java -cp target/javadoc-json-doclet-1.0-jar-with-dependencies.jar ExtractMain <output-file-name> <src-jar-file> 
+    $ java -cp target/javadoc-json-doclet-1.0-jar-with-dependencies.jar ExtractMain <src-jar-file> <output-file-name> 
 
-        <output-file-name> JSON output is written to this file (note: existing files will be overwritten)
         <src-jar-file> Jar file to process for javadoc.  \*.tar files are also supported.
+        <output-file-name> JSON output is written to this file (note: existing files will be overwritten)
 
 
 
