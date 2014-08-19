@@ -21,7 +21,7 @@ for x in `find target/dependency`; do dp="$dp;$x"; done
 # 3. The JSON output is NOT in array notation - it's just a series of JSON objects
 #    (i.e. the objects are *not* encapsulated in [], nor are they delimited by ',')
 javadoc \
-        -doclet com.surfapi.javadoc.JsonDoclet \
+        -doclet com.rga78.javadoc.JsonDoclet \
         -docletpath "$dp" \
         -quiet \
         -J-Xms1024m \
