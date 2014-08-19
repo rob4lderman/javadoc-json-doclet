@@ -54,19 +54,8 @@ E.g. here's a portion of the JSON javadoc for method _`java.lang.String.substrin
 
 ###Usage 
 
-    $ java -cp target/javadoc-json-doclet-1.0-jar-with-dependencies.jar Main <output-file-name> <src-dir> ...
-        
-        <output-file-name> JSON output is written to this file (note: existing files will be overwritten)
-        <src-dir> ... 1 or more src directories to process.  All Java files under that dir and all subdirs will be scanned.
-    
+See jsondoclet.sh for example usage.
 
-The project also provides a convenience utility that, given a src jar file, extracts it
-and generates javadoc for all \*.java files.
-
-    $ java -cp target/javadoc-json-doclet-1.0-jar-with-dependencies.jar ExtractMain <src-jar-file> <output-file-name> 
-
-        <src-jar-file> Jar file to process for javadoc.  \*.tar files are also supported.
-        <output-file-name> JSON output is written to this file (note: existing files will be overwritten)
 
 
 

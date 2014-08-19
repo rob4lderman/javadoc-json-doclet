@@ -6,7 +6,7 @@ import java.util.Observable;
 import java.util.Observer;
 
 /**
- * OutputObserver for ProcessHelper that logs the output via Log.log.
+ * OutputObserver for ProcessHelper that collects all output into a List<String>
  */
 public class StreamCollector implements Observer {
     

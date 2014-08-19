@@ -2,21 +2,25 @@ package com.surfapi.test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.net.URL;
 import java.util.List;
 
 /**
  * Try inheriting doc here: {@inheritDoc}
  */
-public class DemoJavadocSubClass extends DemoJavadoc<List> {
+public class DemoJavadocSubClass extends DemoJavadoc<List> implements Serializable {
 
     /**
-     * Overridden method.
+     * Overridden method, inherit doc: {@inheritDoc}
+     * 
+     * @param strs inherit doc: {@inheritDoc}
+     * 
+     * @return inherit doc: {@inheritDoc}
      */
     @Override
-    public void someAbstractMethod(String[] strs) {
-        // TODO Auto-generated method stub
-        
+    public int someAbstractMethod(String[] strs) {
+        return 0;
     }
     
     @Override
